@@ -1,0 +1,42 @@
+# Build artifacts
+bin/
+obj/
+out/
+artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# IDEs
+.vs/
+.idea/
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Logs
+*.log
+logs/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Test results
+TestResult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# Others
+*.user
+*.suo
+*.userprefs
+project.lock.json
