@@ -1,5 +1,7 @@
 # Console Critic
 
+![Shell Nanny Banner](shell-nanny-banner.png)
+
 An unobtrusive companion for your PowerShell console.
 
 Observes commands and outcomes to offer suggest-only guidance while keeping you in control.
