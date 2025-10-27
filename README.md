@@ -1,6 +1,6 @@
 # Console Critic
 
-![Shell Nanny Banner](shell-nanny-banner.png)
+![Shell Nanny Banner](assets/shell-nanny-banner.png)
 
 An unobtrusive companion for your PowerShell console.
 
