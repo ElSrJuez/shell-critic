@@ -80,4 +80,10 @@ public sealed class CriticFeedbackProvider : IFeedbackProvider
             errorMessage?.Replace("\r", " ").Replace("\n", " ") ?? string.Empty
         });
     }
+
+    // After serialisation, queue embedding generation (fire-and-forget)
+    public static void QueueEmbedding(string cmdLine, CancellationToken token)
+    {
+        _ = ConsoleCritic.Provider.Llm.LlmWorkerProvider.Current.EmbedAsync(cmdLine, token).ContinueWith(_ => { /* ignore */ });
+    }
 }
