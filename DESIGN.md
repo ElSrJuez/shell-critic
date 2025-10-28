@@ -165,7 +165,15 @@ Third-party DLLs can extend triggers, storage, or outputs.
   7.3. [ ] Configurable expiry for Akavache objects
   7.4. [ ] Diagnostics/observability for memory and disk usage
   7.5. [ ] Documentation update for tiered memory implementation and limitations
-8. [ ] Implement tiered memory (RAM + disk) using Akavache: install `Akavache.Sqlite3` & `Akavache.SystemTextJson`, initialize builder (`WithAkavacheCacheDatabase<SystemJsonSerializer>` + `WithSqliteProvider`), and implement `TieredMemoryStore` (MemoryCache for RAM, LocalMachine for disk) to persist `InvocationRecord` schema with normalized embeddings and summaries
+8. [x] Implement tiered memory (RAM + disk) using Akavache: install `Akavache.Sqlite3` & `Akavache.SystemTextJson`, initialize builder (`WithAkavacheCacheDatabase<SystemJsonSerializer>` + `WithSqliteProvider`), and implement `TieredMemoryStore` (MemoryCache for RAM, LocalMachine for disk) to persist `InvocationRecord` schema with normalized embeddings and summaries
+  8.1. [x] Akavache is initialized at startup using the builder pattern in `AkavacheInit.Initialize()`, with `WithAkavacheCacheDatabase<SystemJsonSerializer>`, `WithSqliteProvider`, and application name set to `ConsoleCritic`.
+  8.2. [x] `InvocationRecord` schema is persisted to both RAM and disk tiers, including all required fields (timestamp, command, error, embedding, summary).
+  8.3. [x] End-to-end validation: `TieredMemoryStore` writes and retrieves records from both RAM and disk; error handling is surfaced and tested.
+  8.4. [ ] Embedding and summary generation is fully integrated and stored for each record.
+  8.5. [ ] Add retention/expiry logic for disk tier (Akavache object expiry or manual cleanup).
+  8.6. [ ] Add diagnostics/observability for tiered memory (usage, errors, timings).
+  8.7. [ ] Add unit/integration tests for tiered memory flows.
+  8.8. [ ] Update documentation and code comments for final implementation.
 9. [ ] Implement vector search (cosine/Euclidean) for embeddings
 10. [ ] Add nightly clustering job for error deduplication
 11. [ ] Extend config for policy gates, verbosity, triggers
