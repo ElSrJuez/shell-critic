@@ -102,3 +102,22 @@ These responsibilities are reflected in code:
 | EmbedAsync | `OnnxEmbeddingWorker` | ONNX Runtime + MiniLM |
 
 `LlmWorkerProvider.Current` returns a composite that delegates each call to the appropriate worker.
+
+---
+
+## Implementation Plan (Checklist)
+
+1. [x] Define `ILlmWorker` interface for embeddings and summaries
+2. [x] Implement `OnnxEmbeddingWorker` for local MiniLM embeddings
+3. [x] Implement `FoundryGenerationWorker` for summaries (stub, config-driven)
+4. [x] Implement `LlmWorkerProvider` composite, config-driven
+5. [x] Add config file for model paths and options
+6. [x] Ensure dependencies are copied to output for PowerShell module loading
+7. [x] Provide token_type_ids input for ONNX models
+8. [x] Restore clean feedback event logging to TSV, separating feedback from system logs
+9. [ ] Add embedding field to feedback event log (TSV)
+10. [ ] Implement vector search (cosine/Euclidean) for embeddings
+11. [ ] Implement real SummariseAsync via OpenAI/Foundry
+12. [ ] Add in-memory ring buffer for last N embeddings/events
+13. [ ] Add config flag to disable summariser if not needed
+14. [ ] Add clustering job for error deduplication

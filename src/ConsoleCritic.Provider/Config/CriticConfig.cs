@@ -8,6 +8,7 @@ public sealed class CriticConfig
 {
     public string? EmbeddingModelDir { get; set; }
     public string? SummarizerModelAlias { get; set; }
+    public int RingBufferSize { get; set; } = 200;
 
     public static CriticConfig Load()
     {

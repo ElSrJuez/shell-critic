@@ -6,6 +6,7 @@ using System.Management.Automation.Language;
 using System.Management.Automation.Subsystem;
 using System.Management.Automation.Subsystem.Feedback;
 using System.Threading;
+using System.Linq;
 
 namespace ConsoleCritic.Provider;
 
@@ -86,7 +87,7 @@ public sealed class CriticFeedbackProvider : IFeedbackProvider
             commandName = ca.GetCommandName();
         }
 
-        var vectorInfo = emb is { Length: >0 } ? $"emb:{emb.Length}" : string.Empty;
+        var vectorInfo = emb is { Length: >0 } ? string.Join(",", emb.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture))) : string.Empty;
         // lightweight TSV to keep it simple for now
         // time	trigger	commandName	cmdLine	errorType	errorMessage
         return string.Join("\t", new[]

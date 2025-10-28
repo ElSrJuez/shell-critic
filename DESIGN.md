@@ -28,17 +28,30 @@ D. Critic/Nanny (suggestions) → PSHost inline or PSReadLine predictor.
 | Embed | `LlmWorker.Embed(cmd/err)` | 384-d float[], stored inline |
 | Log | `FileMemoryStore.Append(line)` | JSONL in `%LocalAppData%/ConsoleCritic/logs/` |
 
-### B. Index / Store / Memory
+### B. Index / Store / App Memory
 
-* Append-only JSONL per day with inline `emb`.
-* `InMemoryRingBuffer` holds last ~200 events for instant look-ups.
-* Retention job zips files older than `config.RetentionDays`.
-* `IMemoryStore` abstraction allows future Sqlite / cloud back-ends.
+Unified, schema-driven tiered memory using a single record type for both RAM and disk:
+
+* Record schema: `InvocationRecord(Timestamp, Trigger, CommandName, CommandLine, ErrorType?, ErrorMessage?, Embedding?, Summary?)`
+* RAM tier: `InMemoryRingBuffer<InvocationRecord>` (or MemoryCache) holding last ~200 normalized-embedding records for ultra-fast look-ups.
+* Disk tier: append-only per-day files (TSV for feedback; JSONL for system/diagnostics) using the same schema fields.
+* Write-through: `TieredMemoryStore.Add(record)` writes to RAM and disk; eviction removes oldest from RAM only.
+* Retention: zips/archives files older than `config.RetentionDays`.
+* Abstractions: `IMemoryStore`, `IRingBufferStore`, `IFileAppendStore` to enable future SQLite/cloud back-ends without changing the schema.
 
 ### C. Retrieval
 
-* `Memory.Query(predicate, take)` – LINQ over streamed JSON.  
-* `VectorSearch.Knn(embedding, k)` – brute-force for ≤2 k vectors; upgrade to FAISS later.  
+RAG-friendly retrieval operating over the tiered memory:
+
+* Predicate queries: `Memory.Query(predicate, take)` – LINQ over RAM first, then streamed disk.
+* Vector KNN: `VectorSearch.Knn(embedding, k)` – cosine similarity on unit-normalized 384-d vectors; RAM tier first, bounded disk window fallback.
+* Hybrid scoring: optional boosts for same trigger, same command, recency decay.
+* RAG pipeline:
+  1. Embed current invocation via `LlmWorker.Embed` (store normalized vector for reuse).
+  2. Retrieve top-K similar `InvocationRecord`s from RAM; fill remainder from bounded disk scan.
+  3. Use stored summaries where available; else fall back to compact redacted snippets.
+  4. Deduplicate near-duplicates (use nightly clusters) and cap total context (3–7 items).
+  5. Build prompt: system constraints + current error + retrieved context; call summariser/LLM.
 * `Export-ConsoleCriticMemory` cmdlet for manual analysis.
 
 ### D. Critic / Nanny
@@ -114,3 +127,21 @@ Third-party DLLs can extend triggers, storage, or outputs.
 * No mandatory cloud dependencies.
 
 ---
+
+## Implementation Plan (Checklist)
+
+1. [x] FeedbackProvider captures PowerShell events and writes to `critic-YYYYMMDD.log` (TSV), restoring clean feedback event logging
+2. [x] Out-of-band/system events and diagnostics written to `events-YYYYMMDD.jsonl` and `diagnostics-YYYYMMDD.log` (separated from feedback)
+3. [x] Embedding generation via ONNX MiniLM, path from config
+4. [x] Summariser via Foundry Local/OpenAI (stub, config-driven)
+5. [x] Config file at `%LOCALAPPDATA%/ConsoleCritic/config.json` (model paths, options)
+6. [x] CriticFeedbackProvider logs only feedback events to TSV, not JSONL; system logs are kept separate
+7. [ ] Implement real Summariser via OpenAI/Foundry and validate ≤300 ms latency
+8. [ ] Implement tiered memory (RAM + disk) using Akavache: install `Akavache.Sqlite3` & `Akavache.SystemTextJson`, initialize builder (`WithAkavacheCacheDatabase<SystemJsonSerializer>` + `WithSqliteProvider`), and implement `TieredMemoryStore` (MemoryCache for RAM, LocalMachine for disk) to persist `InvocationRecord` schema with normalized embeddings and summaries
+9. [ ] Implement vector search (cosine/Euclidean) for embeddings
+10. [ ] Add nightly clustering job for error deduplication
+11. [ ] Extend config for policy gates, verbosity, triggers
+12. [ ] Add export cmdlet for memory analysis (with redaction)
+13. [ ] Add extension surface for custom triggers/storage
+14. [ ] Add Pester/xUnit tests for all major flows
+18. [ ] Integrate retrieval to use Akavache tiers (RAM first, bounded disk window) for KNN and predicate queries

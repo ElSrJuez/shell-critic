@@ -11,6 +11,10 @@
   <ItemGroup>
     <!-- Compile-time only reference; PowerShell provides the runtime assembly.
          SMA 7.5.0 targets net9. For net8 projects, use 7.4.x. Use a range to pick latest 7.4.*. -->
+    <PackageReference Include="Akavache" Version="11.4.1" />
+    <PackageReference Include="Akavache.Sqlite3" Version="11.4.1" />
+    <PackageReference Include="Akavache.SystemTextJson" Version="11.4.1" />
+    <PackageReference Include="Splat" Version="17.1.1" />
     <PackageReference Include="System.Management.Automation" Version="[7.4.0,7.5.0)" ExcludeAssets="runtime" PrivateAssets="All" />
   </ItemGroup>
 

@@ -1,4 +1,18 @@
 {
-  "EmbeddingModelDir": "D:\\Software\\AIGalleryCache\\sentence-transformers--all-MiniLM-L12-v2\\main\\onnx",
-  "SummarizerModelAlias": "phi3-mini-4k-instruct-cuda-gpu"
+  "EmbeddingModelDir": "D:\\Software\\AIGalleryCache\\sentence-transformers--all-MiniLM-L12-v2\\main",
+  "SummarizerModelAlias": "phi3-mini-4k-instruct-cuda-gpu",
+  "SummariserEnabled": true,
+  "SummariserTimeoutMs": 300,
+  "RingBufferSize": 200,
+  "TieredStore": {
+    "MemoryTier": "InMemory",
+    "DiskTier": "LocalMachine",
+    "CompressArchiveAfterDays": 7
+  },
+  "DatabasePath": "~\\AppData\\Local\\ConsoleCritic\\critic.db",
+  "FeedbackLogPath": "~\\AppData\\Local\\ConsoleCritic\\logs\\critic-YYYYMMDD.log",
+  "DiagnosticsLogPath": "~\\AppData\\Local\\ConsoleCritic\\logs\\diagnostics-YYYYMMDD.log",
+  "ArchivePath": "~\\AppData\\Local\\ConsoleCritic\\archive",
+  "RetentionDays": 30,
+  "LogDiskFormat": "TSV"
 }
