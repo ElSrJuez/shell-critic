@@ -29,6 +29,29 @@ D. Critic/Nanny (suggestions) → PSHost inline or PSReadLine predictor.
 | Log | `FileMemoryStore.Append(line)` | JSONL in `%LocalAppData%/ConsoleCritic/logs/` |
 
 ### B. Index / Store / App Memory
+#### Tiered Memory Implementation & Limitations (v0.2)
+
+Console Critic uses a two-tier memory architecture for storing invocation records:
+
+- **RAM Tier:**
+  - In-memory ring buffer (`Queue<InvocationRecord>`) holds the most recent N records (configurable, default ~200).
+  - Enables ultra-fast lookups and vector search for recent events.
+  - Eviction policy: oldest records are removed when buffer is full.
+
+- **Disk Tier:**
+  - Persistent storage via Akavache (`LocalMachine` cache) for durable retention.
+  - All records are written to disk; no fallback or silent error handling—errors are surfaced immediately.
+  - No expiry or retention logic is implemented yet; records persist until manually purged or Akavache is configured for expiry.
+  - No archival/zipping of old records; planned for future versions.
+
+**Limitations (as of v0.2):**
+- No multi-provider or failback logic; only RAM and disk tiers are supported.
+- No automatic expiry, archival, or cleanup for disk tier.
+- No diagnostics for memory pressure or disk usage.
+- No unit/integration tests for tiered memory flows (pending).
+- Configuration for expiry/retention is not yet exposed.
+
+Future versions will address retention, diagnostics, and extensibility for additional storage backends.
 
 Unified, schema-driven tiered memory using a single record type for both RAM and disk:
 
@@ -137,6 +160,11 @@ Third-party DLLs can extend triggers, storage, or outputs.
 5. [x] Config file at `%LOCALAPPDATA%/ConsoleCritic/config.json` (model paths, options)
 6. [x] CriticFeedbackProvider logs only feedback events to TSV, not JSONL; system logs are kept separate
 7. [ ] Implement real Summariser via OpenAI/Foundry and validate ≤300 ms latency
+  7.1. [ ] Retention/archival logic for disk tier (expiry, cleanup, or archiving)
+  7.2. [ ] Unit/integration tests for tiered memory (RAM + disk)
+  7.3. [ ] Configurable expiry for Akavache objects
+  7.4. [ ] Diagnostics/observability for memory and disk usage
+  7.5. [ ] Documentation update for tiered memory implementation and limitations
 8. [ ] Implement tiered memory (RAM + disk) using Akavache: install `Akavache.Sqlite3` & `Akavache.SystemTextJson`, initialize builder (`WithAkavacheCacheDatabase<SystemJsonSerializer>` + `WithSqliteProvider`), and implement `TieredMemoryStore` (MemoryCache for RAM, LocalMachine for disk) to persist `InvocationRecord` schema with normalized embeddings and summaries
 9. [ ] Implement vector search (cosine/Euclidean) for embeddings
 10. [ ] Add nightly clustering job for error deduplication

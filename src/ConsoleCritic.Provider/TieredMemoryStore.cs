@@ -32,9 +32,17 @@ namespace ConsoleCritic.Provider
             _ringBuffer.Enqueue(record);
 
             // Akavache RAM tier
-            await _ramCache.InsertObject(Guid.NewGuid().ToString(), record).ToTask();
+            try {
+                await _ramCache.InsertObject(Guid.NewGuid().ToString(), record).ToTask();
+            } catch (Exception ex) {
+                throw new InvalidOperationException("Failed to persist record to RAM tier.", ex);
+            }
             // Akavache disk tier
-            await _diskCache.InsertObject(Guid.NewGuid().ToString(), record).ToTask();
+            try {
+                await _diskCache.InsertObject(Guid.NewGuid().ToString(), record).ToTask();
+            } catch (Exception ex) {
+                throw new InvalidOperationException("Failed to persist record to disk tier.", ex);
+            }
         }
 
         public IEnumerable<InvocationRecord> QueryRecent(int take)
@@ -45,10 +53,14 @@ namespace ConsoleCritic.Provider
 
         public async Task<IEnumerable<InvocationRecord>> QueryDiskAsync(int take)
         {
-            var allEnumerable = await _diskCache.GetAllObjects<InvocationRecord>().ToTask();
-            var allList = allEnumerable is IEnumerable<InvocationRecord> seq ? seq.ToList() : new List<InvocationRecord>();
-            // Return most recent N from disk
-            return allList.Count > take ? allList.GetRange(allList.Count - take, take) : allList;
+            try {
+                var allEnumerable = await _diskCache.GetAllObjects<InvocationRecord>().ToTask();
+                var allList = allEnumerable is IEnumerable<InvocationRecord> seq ? seq.ToList() : new List<InvocationRecord>();
+                // Return most recent N from disk
+                return allList.Count > take ? allList.GetRange(allList.Count - take, take) : allList;
+            } catch (Exception ex) {
+                throw new InvalidOperationException("Failed to query disk tier.", ex);
+            }
         }
     }
 }
