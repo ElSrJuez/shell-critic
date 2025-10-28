@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +22,7 @@
   <ItemGroup>
     <!-- Onnx packages -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.18.0" />
-    <PackageReference Include="Microsoft.ML.Tokenizers" Version="1.0.0" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.0-preview.1.25125.4" />
   </ItemGroup>
 
   <ItemGroup>

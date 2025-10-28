@@ -20,24 +20,22 @@ public static class LlmWorkerProvider
 
     private static ILlmWorker Create()
     {
-        try
-        {
-            // Model aliases / paths could come from config; hard-coded for prototype.
-            var summariser = new FoundryGenerationWorker("phi3-mini-4k-instruct-cuda-gpu");
+        // Fail fast: load configuration and construct workers; exceptions will surface.
+        var cfg = ConsoleCritic.Provider.Config.CriticConfig.Load();
 
-            var embModelDir = Environment.GetEnvironmentVariable("CONSOLE_CRITIC_EMB_MODEL_DIR")
-                               ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                                               "ConsoleCritic", "models", "all-MiniLM-L12-v2");
-            ILlmWorker embedder;
-            try { embedder = new OnnxEmbeddingWorker(embModelDir); }
-            catch { embedder = new NoOpWorker(); }
+        var summariserModel = cfg.SummarizerModelAlias ?? "phi3-mini-4k-instruct-cuda-gpu";
+        var summariser = new FoundryGenerationWorker(summariserModel);
+        ConsoleCritic.Provider.Logging.CriticLog.Event($"FoundryGenerationWorker initialized with model '{summariserModel}'");
 
-            return new CompositeWorker(summariser, embedder);
-        }
-        catch
-        {
-            return new NoOpWorker();
-        }
+        var embModelDir = cfg.EmbeddingModelDir ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ConsoleCritic", "models", "all-MiniLM-L12-v2");
+        var embedder = new OnnxEmbeddingWorker(embModelDir);
+        ConsoleCritic.Provider.Logging.CriticLog.Event($"OnnxEmbeddingWorker initialized using model directory '{embModelDir}'");
+
+        var worker = new CompositeWorker(summariser, embedder);
+        ConsoleCritic.Provider.Logging.CriticLog.Event($"CompositeWorker created (summariser={summariser.GetType().Name}, embedder={embedder.GetType().Name})");
+        return worker;
     }
 
     private sealed class CompositeWorker : ILlmWorker
@@ -56,14 +54,5 @@ public static class LlmWorkerProvider
 
         public Task<string> SummariseAsync(string text, CancellationToken ct = default) =>
             _summariser.SummariseAsync(text, ct);
-    }
-
-    private sealed class NoOpWorker : ILlmWorker
-    {
-        public Task<float[]> EmbedAsync(string text, CancellationToken ct = default) =>
-            Task.FromResult(Array.Empty<float>());
-
-        public Task<string> SummariseAsync(string text, CancellationToken ct = default) =>
-            Task.FromResult(string.Empty);
     }
 }

@@ -36,7 +36,25 @@ public sealed class CriticFeedbackProvider : IFeedbackProvider
     {
         try
         {
-            var entry = Serialize(context);
+            var cmdLine = context.CommandLine ?? string.Empty;
+            float[]? emb = null;
+            try
+            {
+                using var cts = new CancellationTokenSource(300);
+                emb = ConsoleCritic.Provider.Llm.LlmWorkerProvider.Current.EmbedAsync(cmdLine, cts.Token).Result;
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    var errFile = Path.Combine(Path.GetDirectoryName(_logPath)!, "critic-errors.log");
+                    File.AppendAllText(errFile, $"{DateTime.UtcNow:o}\tEmbedError\t{ex.Message}{Environment.NewLine}");
+                }
+                catch { /* ignore secondary failures */ }
+            }
+
+            var entry = Serialize(context, emb);
+            // Restore: write feedback events directly to critic-YYYYMMDD.log (TSV)
             File.AppendAllText(_logPath, entry + Environment.NewLine);
         }
         catch
@@ -47,7 +65,7 @@ public sealed class CriticFeedbackProvider : IFeedbackProvider
         return null;
     }
 
-    private static string Serialize(FeedbackContext context)
+    private static string Serialize(FeedbackContext context, float[]? emb)
     {
         var trigger = context.Trigger.ToString();
         var cmdLine = context.CommandLine ?? string.Empty;
@@ -68,6 +86,7 @@ public sealed class CriticFeedbackProvider : IFeedbackProvider
             commandName = ca.GetCommandName();
         }
 
+        var vectorInfo = emb is { Length: >0 } ? $"emb:{emb.Length}" : string.Empty;
         // lightweight TSV to keep it simple for now
         // time	trigger	commandName	cmdLine	errorType	errorMessage
         return string.Join("\t", new[]
@@ -77,13 +96,10 @@ public sealed class CriticFeedbackProvider : IFeedbackProvider
             commandName ?? string.Empty,
             cmdLine.Replace("\r", " ").Replace("\n", " "),
             errorType ?? string.Empty,
-            errorMessage?.Replace("\r", " ").Replace("\n", " ") ?? string.Empty
+            errorMessage?.Replace("\r", " ").Replace("\n", " ") ?? string.Empty,
+            vectorInfo
         });
     }
 
-    // After serialisation, queue embedding generation (fire-and-forget)
-    public static void QueueEmbedding(string cmdLine, CancellationToken token)
-    {
-        _ = ConsoleCritic.Provider.Llm.LlmWorkerProvider.Current.EmbedAsync(cmdLine, token).ContinueWith(_ => { /* ignore */ });
-    }
+
 }
